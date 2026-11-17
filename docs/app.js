@@ -1,0 +1,37 @@
+'use strict';
+const $=s=>document.querySelector(s);
+let DATA=null, width=4;
+const fmt=(n,d=4)=>Number(n).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const colors={RM:'#1e6c91',DM:'#b75b29',EDF:'#287d63',LLF:'#8a54a3'};
+const POLICIES=['RM','DM','EDF','LLF'];
+for(let line=0;line<2;line++)for(let i=0;i<64;i++){const b=document.createElement('i');if(line===0&&i>=61)b.className='active';if(line===1&&i<5)b.className='end';$('#hero-line'+(line+1)).append(b);}
+for(let l=1;l<=2;l++)for(let i=0;i<64;i++){const b=document.createElement('span');b.className='byte';b.title='Byte '+((l-1)*64+i);$('#cache'+l).append(b);}
+function axes(W,H,L,R,T,B,max,xLabel,yLabel,dark=false){const c=dark?'#abc0d0':'#6a7c8c';let s='';for(let i=0;i<=4;i++){let y=T+(H-T-B)*i/4;let v=max*(1-i/4);s+=`<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="#dce5ec"/><text x="${L-8}" y="${y+3}" text-anchor="end" fill="${c}" font-size="10">${fmt(v,v<1?2:1)}</text>`;}
+s+=`<text x="${L}" y="12" fill="${c}" font-size="10">${yLabel}</text><text x="${W-R}" y="${H-4}" text-anchor="end" fill="${c}" font-size="10">${xLabel}</text>`;return s;}
+function drawOffset(){const k=$('#read-kind').value;const points=DATA.results[k+'-'+width];const off=Number($('#offset').value);const W=500,H=230,L=42,R=16,T=26,B=36;const max=Math.max(...points.map(x=>x.median))*1.14;const xx=o=>L+o/63*(W-L-R),yy=v=>T+(1-v/max)*(H-T-B);let s=axes(W,H,L,R,T,B,max,'offset (bytes)','ns/acesso');
+for(const v of [0,16,32,48,63])s+=`<text x="${xx(v)}" y="${H-B+17}" text-anchor="middle" fill="#6a7c8c" font-size="10">${v}</text>`;
+const boundary=65-width;s+=`<line x1="${xx(boundary)}" x2="${xx(boundary)}" y1="${T}" y2="${H-B}" stroke="#ce592b" stroke-dasharray="4 4"/><path d="${points.map((p,i)=>(i?'L':'M')+xx(i)+','+yy(p.median)).join(' ')}" fill="none" stroke="#28738b" stroke-width="2.5"/><line x1="${xx(off)}" x2="${xx(off)}" y1="${T}" y2="${H-B}" stroke="#96aab7" stroke-dasharray="2 3"/><circle cx="${xx(off)}" cy="${yy(points[off].median)}" r="5" fill="#ce592b" stroke="white" stroke-width="2"/>`;
+$('#offset-chart').innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Mediana agrupada para ${width} bytes. Offset ${off}: ${fmt(points[off].median)} ns por acesso.">${s}</svg>`;
+$('#selected-median').textContent=fmt(points[off].median);
+$('#sample-note').textContent=`Offset ${off} · ${points[off].samples.toLocaleString('pt-BR')} amostras · máximo observado: ${fmt(points[off].max)} ns/acesso.`;
+}
+function updateCache(){const off=Number($('#offset').value),cross=off+width>64;$('#offset-value').textContent=off+' B';for(let l=1;l<=2;l++){[...$('#cache'+l).children].forEach((e,i)=>{const pos=(l-1)*64+i;const selected=pos>=off&&pos<off+width;e.className='byte'+(selected?(l===1?' selected':' crossing'):'');});}
+const status=$('#crossing-status');status.className='crossing-status'+(!cross?' safe':'');const spill=Math.max(0,off+width-64);status.innerHTML=cross?`<strong>Cruza a linha de cache</strong>${width-spill} byte(s) na primeira linha e ${spill} na segunda.`:`<strong>Permanece na mesma linha</strong>Os ${width} bytes estão contidos na primeira linha.`;
+if(DATA)drawOffset();}
+function tableResults(){let s='';for(const f of DATA.factors){const delta=(f.k-1)*100;s+=`<tr class="${f.kind==='dependent'?'highlight':''}"><td>${f.kind==='dependent'?'Cadeia dependente':'Independentes'}</td><td>${f.bytes} B</td><td>${fmt(f.baseline)}</td><td>${fmt(f.crossing)}</td><td>${fmt(f.k)}</td><td class="delta">${delta>=0?'+':'−'}${fmt(Math.abs(delta),2)}%</td></tr>`;}$('#results-table').innerHTML=s;}
+function simRows(){const set=$('#task-set').value,scenario=$('#sim-scenario').value;return DATA.simulation.filter(r=>r.conjunto.startsWith(set+' ')&&r.cenario===scenario);}
+function updateSimulation(){if(!DATA)return;const rows=simRows(),p=Number($('#fraction').value);$('#p-value').textContent=p+'%';const active=rows.filter(r=>Math.abs(Number(r.p)*100-p)<.001);if(active.length!==4)throw Error('Grade da simulação incompleta');$('#sim-k').textContent=fmt(active[0].k);$('#sim-u').textContent=fmt(Number(active[0].U_efetiva_ticks)*100,2)+'%';
+$('#policy-cards').innerHTML=POLICIES.map(pol=>{const r=active.find(r=>r.politica===pol),late=Number(r.perdidos)>0;return `<div class="policy-card ${late?'late':''}"><span class="policy-name">${pol}</span><strong>${late?fmt(r.perda_pct,2)+'%':'Sem perdas'}</strong><small>${r.perdidos} de ${r.jobs} jobs perderam o prazo</small></div>`;}).join('');
+const W=500,H=290,L=43,R=16,T=30,B=38;const max=Math.max(5,...rows.map(r=>Number(r.perda_pct)))*1.08;const xx=v=>L+v/100*(W-L-R),yy=v=>T+(1-v/max)*(H-T-B);let s=axes(W,H,L,R,T,B,max,'fração afetada p (%)','jobs perdidos (%)');for(const v of [0,20,40,60,80,100])s+=`<text x="${xx(v)}" y="${H-B+17}" text-anchor="middle" fill="#6a7c8c" font-size="10">${v}</text>`;
+s+=`<line x1="${xx(p)}" x2="${xx(p)}" y1="${T}" y2="${H-B}" stroke="#9cadba" stroke-dasharray="3 4"/>`;
+POLICIES.forEach((pol,i)=>{const rr=rows.filter(r=>r.politica===pol).sort((a,b)=>Number(a.p)-Number(b.p));s+=`<path d="${rr.map((r,j)=>(j?'L':'M')+xx(Number(r.p)*100)+','+yy(Number(r.perda_pct))).join(' ')}" fill="none" stroke="${colors[pol]}" stroke-width="2" ${i%2?'stroke-dasharray="5 3"':''}/>`;for(const r of rr)s+=`<circle cx="${xx(Number(r.p)*100)}" cy="${yy(Number(r.perda_pct))}" r="${Math.abs(Number(r.p)*100-p)<.001?4:2}" fill="${colors[pol]}"/>`;});
+$('#loss-chart').innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Perdas por política para o conjunto ${esc($('#task-set').value)} e cenário ${esc($('#sim-scenario').selectedOptions[0].textContent)}. Valores exatos disponíveis nos cartões.">${s}</svg>`;
+}
+$('#width-controls').addEventListener('click',e=>{const b=e.target.closest('button[data-width]');if(!b)return;width=Number(b.dataset.width);$('#width-controls').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));updateCache();});
+$('#offset').addEventListener('input',updateCache);$('#read-kind').addEventListener('change',()=>{if(DATA)drawOffset();});
+for(const id of ['#task-set','#sim-scenario'])$(id).addEventListener('change',updateSimulation);$('#fraction').addEventListener('input',updateSimulation);
+$('.menu-toggle').addEventListener('click',()=>{const open=$('.menu-toggle').getAttribute('aria-expanded')!=='true';$('.menu-toggle').setAttribute('aria-expanded',String(open));$('#nav').classList.toggle('open',open);});
+$('#nav').querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{$('#nav').classList.remove('open');$('.menu-toggle').setAttribute('aria-expanded','false');}));
+$('#copy-citation').addEventListener('click',async()=>{const text='SOUZA, Alexsand Farias de; TEIXEIRA, Wesley Vitorino. Memory Alignment & Real-Time Systems: benchmarks e análise de escalonabilidade. PPGEE/UFAM, 2026. https://github.com/alexsandsouza/memory-alignment-realtime. Informar data de acesso e commit consultado.';try{await navigator.clipboard.writeText(text);$('#citation-feedback').textContent='Referência copiada para a área de transferência.';}catch{$('#citation-feedback').textContent=text;}});
+updateCache();fetch('assets/data.json').then(r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json();}).then(data=>{DATA=data;tableResults();drawOffset();updateSimulation();}).catch(e=>{console.error(e);$('#error-banner').hidden=false;});

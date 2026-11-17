@@ -287,6 +287,12 @@ Repita cinco vezes com sufixos `run1` a `run5`, preservando as campanhas anterio
 
 Não misture medições novas com os CSVs publicados sem identificar plataforma, data, compilação e condições. Para comparações causais entre Linux nativo e WSL2, use o mesmo hardware e controle o protocolo.
 
+## Site demonstrativo
+
+O laboratório visual do projeto está implementado em [`docs/index.html`](docs/index.html), com exploração de linhas de cache, gráficos das medições e consulta à grade de simulações. O site identifica ilustrações, dados experimentais e projeções de forma distinta.
+
+As instruções para ativação no GitHub Pages estão em [`docs/README.md`](docs/README.md).
+
 ## Artigo e artefatos
 
 - [Artigo atualizado - Word editável](final/Artigo_Linux_Nativo_Atualizado.docx)
