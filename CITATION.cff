@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "Ao utilizar estes artefatos, cite o projeto e informe o commit consultado."
+type: software
+title: "Memory Alignment & Real-Time Systems: benchmarks e análise de escalonabilidade"
+authors:
+  - family-names: "Farias de Souza"
+    given-names: "Alexsand"
+    affiliation: "PPGEE, Universidade Federal do Amazonas (UFAM)"
+  - family-names: "Vitorino Teixeira"
+    given-names: "Wesley"
+    affiliation: "PPGEE, Universidade Federal do Amazonas (UFAM)"
+repository-code: "https://github.com/alexsandsouza/memory-alignment-realtime"
+url: "https://github.com/alexsandsouza/memory-alignment-realtime"
+abstract: >-
+  Benchmarks em C de leituras independentes e dependentes, medições
+  em Linux nativo e projeções de escalonabilidade sob RM, DM, EDF e LLF.
+keywords:
+  - memory alignment
+  - real-time systems
+  - cache-line crossing
+  - schedulability
+  - benchmarks

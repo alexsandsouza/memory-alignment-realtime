@@ -1,0 +1,11 @@
+{
+  "validacao_original": "OK",
+  "comparacoes_referencia_tick": 36,
+  "resultado": "OK",
+  "tick_ms": 0.01,
+  "tolerancia_bisseccao_p": 0.002,
+  "valores_k": "precisao integral do CSV, sem arredondar para tres casas",
+  "cenarios": 8,
+  "linhas_grade": 1408,
+  "cache_estados": 1266
+}

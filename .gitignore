@@ -1,0 +1,10 @@
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+novas_coletas/
+bench_align_4
+bench_align_8
+bench_chain_4
+bench_chain_8
